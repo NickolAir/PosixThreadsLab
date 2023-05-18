@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
         MPI_Allreduce(&iterationTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
         MPI_Allreduce(&iterationTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
-        if(rank==0){
+        if (rank==0) {
             double disbalance = maxTime - minTime;
             std::cout << "Disbalance = " << disbalance << std::endl;
             std::cout << "Disbalance in % = " << disbalance / maxTime * 100 << std::endl;
