@@ -10,11 +10,11 @@ constexpr int SIN_CONST = 1000;
 constexpr int L = 15000;
 constexpr int MIN_TASKS_TO_SEND = 3;
 constexpr int PERCENT = 30; // can be 50%
-const int STOP_CODE = -1; // Код остановки для потоков
+constexpr int STOP_CODE = -1; // Код остановки для потоков
 
-struct arguments {
+typedef struct arguments {
     int* tasks;
-};
+} arguments_t;
 
 int currentTask = 0;
 int leftTasks = 0;
@@ -30,7 +30,7 @@ void spaceByRank(int rank) {
 }
 
 void* recvTasks(void* tasksAndRank) {
-    arguments params = *((arguments*)tasksAndRank);
+    arguments_t params = *((arguments_t*)tasksAndRank);
     int sendTasks = 0;
     int recvStatus = 0;
 
@@ -98,11 +98,9 @@ int main(int argc, char** argv) {
     leftTasks = processTasksAmount;
     //std::cout << processTasksAmount << " tasks for №" << rank << std::endl;
     int* tasks = new int[processTasksAmount];
-    arguments params = { tasks };
+    arguments_t params = { tasks };
     pthread_create(&recv, &attrs, recvTasks, &params);
     pthread_attr_destroy(&attrs);
-    bool execMore = true;
-    int execMoreTasksAmount = 0;
     double startTime = MPI_Wtime();
     double iterationStartTime = 0;
     double iterationTime = 0;
@@ -118,28 +116,9 @@ int main(int argc, char** argv) {
         double time = MPI_Wtime() - iterationStartTime;
         // spaceByRank(rank);
         //std::cout << rank << " finished" << localTasks << " done " << time << std::endl;
-        while (execMore) {
-            execMore = false;
-            int i = (rank + 1) % size;
-            while (i != rank) {
-                //spaceByRank(rank);
-                // std::cout << rank << " send to " << i << std::endl;
-                MPI_Send(&rank, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-                MPI_Recv(&execMoreTasksAmount, 1, MPI_INT, i, 1, MPI_COMM_WORLD, &status);
 
-                if (execMoreTasksAmount) { // > 0
-                    execMore = true;
-                    MPI_Recv(tasks, execMoreTasksAmount, MPI_INT, i, 1, MPI_COMM_WORLD, &status);
-                    // spaceByRank(rank);
-                    //     std::cout << "Process " << rank << "get " << execMoreTasksAmount << " tasks from " << i << std::endl;
-                    executeTasks(tasks, execMoreTasksAmount);
-                }
-                i = (i + 1) % size;
-            }
-
-        }
         iterationTime = MPI_Wtime() - iterationStartTime;
-        //spaceByRank(rank);
+        // spaceByRank(rank);
         //std::cout << rank << " finished iteration with time = " << iterationTime << std::endl;
         double minTime = 0;
         double maxTime = 0;
@@ -153,14 +132,12 @@ int main(int argc, char** argv) {
         }
         int executed_tasks = 0;
         MPI_Allreduce(&allDoneTasks, &executed_tasks, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        //spaceByRank(rank);
+        // spaceByRank(rank);
 
-        execMore = true;
         MPI_Barrier(MPI_COMM_WORLD);
         if (rank == 0) {
             std::cout << "Executed tasks count = " << executed_tasks << std::endl << std::endl;
         }
-
     }
 
     MPI_Send(&STOP_CODE, 1, MPI_INT, rank, 0, MPI_COMM_WORLD);

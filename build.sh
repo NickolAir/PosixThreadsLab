@@ -17,5 +17,4 @@ cat $PBS_NODEFILE
 echo "Using mpicc at `which mpicc`"
 echo "Running $MPI_NP MPI processes"
 
-
-mpicxx -std=gnu++1y -o prog.out main.cpp -lm -lpthread
+mpicxx -std=gnu++1y -O3 -Wall -Wextra -o prog.out main.cpp -lm -lpthread
